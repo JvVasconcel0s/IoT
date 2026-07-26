@@ -7,7 +7,8 @@ CLOCK_PIN = 21
 
 FULL_WEIGHT_G = 5000
 LOW_STOCK_G = 150
-RAW_AT_FULL_WEIGHT = 2100
+RAW_AT_FULL_WEIGHT = 2100000
+STATUS_INTERVAL_MS = 500
 
 
 def raw_to_grams(raw_value):
@@ -22,6 +23,7 @@ def raw_to_grams(raw_value):
 sensor = HX711(DATA_PIN, CLOCK_PIN)
 
 last_regular_weight = None
+last_regular_status_ms = None
 replenishment_pending = False
 has_seen_load = False
 anomaly_active = False
@@ -32,6 +34,7 @@ while True:
     raw_value = sensor.read_raw()
 
     if raw_value is not None:
+        now = time.ticks_ms()
         weight_g = raw_to_grams(raw_value)
 
         if weight_g > 0:
@@ -56,14 +59,22 @@ while True:
                         print("Abastecimento concluído. Caixa cheia.")
                         replenishment_pending = False
                         last_regular_weight = weight_g
+                        last_regular_status_ms = now
 
                 elif weight_g <= LOW_STOCK_G:
                     print("Evento de reposição disparado! Caixa vazia detectada.")
                     replenishment_pending = True
                     last_regular_weight = None
+                    last_regular_status_ms = None
 
-                elif weight_g != last_regular_weight:
+                elif (
+                    weight_g != last_regular_weight
+                    or last_regular_status_ms is None
+                    or time.ticks_diff(now, last_regular_status_ms)
+                    >= STATUS_INTERVAL_MS
+                ):
                     print("Status: Estoque Regular ({}g)".format(weight_g))
                     last_regular_weight = weight_g
+                    last_regular_status_ms = now
 
     time.sleep_ms(10)
