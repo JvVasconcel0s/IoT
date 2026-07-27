@@ -7,11 +7,14 @@ CLOCK_PIN = 21
 
 FULL_WEIGHT_G = 5000
 LOW_STOCK_G = 150
+# Leitura bruta do HX711 no Wokwi quando a caixa tem 5.000 g.
+# Esta referência calibra a conversão do valor bruto para gramas.
 RAW_AT_FULL_WEIGHT = 2100000
 STATUS_INTERVAL_MS = 500
 
 
 def raw_to_grams(raw_value):
+    """Converte a leitura bruta usando a referência de 5.000 g."""
     if raw_value <= 0:
         return 0
 
